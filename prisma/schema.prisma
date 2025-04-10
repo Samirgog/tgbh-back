@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(cuid())
+  firstName      String
+  lastName       String
+  middleName     String?
+  email          String     @unique
+  isCompanyOwner Boolean
+  acceptedTerms  Boolean
+  businesses     Business[]
+}
+
+model Business {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  banner      Json?
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  stores      Store[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  image       Image?
+}
+
+model Store {
+  id                String   @id @default(cuid())
+  theme             Json
+  paymentTypes      String[]
+  paymentConditions String[]
+  receiveWays       String[]
+  catalog           Catalog?
+  business          Business @relation(fields: [businessId], references: [id])
+  businessId        String
+  branches          Branch[]
+}
+
+model Branch {
+  id        String     @id @default(cuid())
+  name      String
+  address   String
+  store     Store      @relation(fields: [storeId], references: [id])
+  storeId   String
+  employees Employee[]
+  orders    Order[]
+}
+
+model Employee {
+  id       String      @id @default(cuid())
+  tgId     String
+  fullName String
+  branch   Branch      @relation(fields: [branchId], references: [id])
+  branchId String
+  shifts   WorkShift[]
+}
+
+model WorkShift {
+  id         String    @id @default(cuid())
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  employeeId String
+  startedAt  DateTime
+  endedAt    DateTime?
+  active     Boolean   @default(true)
+}
+
+model Catalog {
+  id         String     @id @default(cuid())
+  categories Category[]
+  store      Store      @relation(fields: [storeId], references: [id])
+  storeId    String     @unique
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  priority  Int
+  imageUrl  String?
+  catalog   Catalog   @relation(fields: [catalogId], references: [id])
+  catalogId String
+  products  Product[]
+  image     Image?
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  imageUrl      String?
+  imageName     String?
+  priceAmount   Int?
+  priceCurrency String?
+  parameters    Json?
+  category      Category @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  image         Image?
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  branchId    String
+  products    Json
+  clientInfo  Json
+  paymentType String
+  createdAt   DateTime @default(now())
+  status      String   @default("pending")
+}
+
+model Client {
+  id             String    @id @default(cuid())
+  tgUserId       String    @unique
+  paymentMethods String[]
+  addresses      Address[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Address {
+  id       String @id @default(cuid())
+  client   Client @relation(fields: [clientId], references: [id])
+  clientId String
+  street   String
+  city     String
+  zipCode  String
+  country  String
+}
+
+model Image {
+  id         String    @id @default(cuid())
+  name       String?
+  url        String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  product    Product?  @relation(fields: [productId], references: [id])
+  productId  String?   @unique
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId String?   @unique
+  business   Business? @relation(fields: [businessId], references: [id])
+  businessId String?   @unique
+}
